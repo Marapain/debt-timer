@@ -27,6 +27,7 @@ body {
     font-size: clamp(12px, 3vw, 18px);
     line-height: 1.8;
     max-width: 100%;
+    z-index: 10;
 }
 
 #timer {
@@ -51,12 +52,36 @@ button {
     font-family: 'Press Start 2P', monospace;
     font-size: clamp(10px, 3vw, 14px);
     cursor: pointer;
+    position: relative;
+    z-index: 20;
 }
 
 button:hover {
     background: red;
     color: black;
 }
+
+/* --- НОВЫЙ БЛОК ДЛЯ МЕРЦАЮЩЕГО ЗНАЧКА ПО ЦЕНТРУ --- */
+#overdueIcon {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: clamp(100px, 25vw, 300px);
+    color: red;
+    text-shadow: 0 0 30px red;
+    opacity: 0.3; /* Сделаем его слегка полупрозрачным, чтобы текст под ним читался */
+    display: none; /* Скрыт по умолчанию */
+    z-index: 5; /* Позади текста, но на виду */
+    pointer-events: none; /* Чтобы не мешал кликать на кнопку */
+    animation: slowBlink 2s infinite;
+}
+
+@keyframes slowBlink {
+    0%, 100% { opacity: 0.4; text-shadow: 0 0 40px red; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 0; text-shadow: 0 0 0px red; transform: translate(-50%, -50%) scale(0.95); }
+}
+/* --------------------------------------------------- */
 
 #screamer {
     position: fixed;
@@ -118,6 +143,8 @@ pre {
     <source src="music.mp3" type="audio/mpeg">
 </audio>
 
+<div id="overdueIcon">☠</div>
+
 <div class="terminal">
     <div>> DO VOZVRATA DENEG...</div>
     <div id="timer"></div>
@@ -139,13 +166,13 @@ XX   MMMMMMMMMMMMMMMMMMMMMssssssssssssssssssssssssssMMMMMMMMMMMMMMMMMMMMM   XX
 XX   MMMMMMMMMMMMMMMMss'''                          '''ssMMMMMMMMMMMMMMMM   XX
 XX   MMMMMMMMMMMMyy''                                    ''yyMMMMMMMMMMMM   XX
 XX   MMMMMMMMyy''                                            ''yyMMMMMMMM   XX
-XX   MMMMMy''                                                    ''yMMMMM   XX
-XX   MMMy'                                                          'yMMM   XX
-XX   Mh'                                                              'hM   XX
-XX   -                                                                  -   XX
+XX   MMMMMy''                                                  ''yMMMMM   XX
+XX   MMMy'                                                        'yMMM   XX
+XX   Mh'                                                            'hM   XX
+XX   -                                                                -   XX
 XX                                                                          XX
-XX   ::                                                                ::   XX
-XX   MMhh.        ..hhhhhh..                      ..hhhhhh..        .hhMM   XX
+XX   ::                                                              ::   XX
+XX   MMhh.        ..hhhhhh..                    ..hhhhhh..        .hhMM   XX
 XX   MMMMMh   ..hhMMMMMMMMMMhh.                .hhMMMMMMMMMMhh..   hMMMMM   XX
 XX   ---MMM .hMMMMdd:::dMMMMMMMhh..        ..hhMMMMMMMd:::ddMMMMh. MMM---   XX
 XX   MMMMMM MMmm''      'mmMMMMMMMMyy.  .yyMMMMMMMMmm'      ''mmMM MMMMMM   XX
@@ -156,10 +183,10 @@ XX           MN    .sMMMMMMMMMss.   .    .   .ssMMMMMMMMMs.    NM           XX
 XX           N`    MMMMMMMMMMMMMN   M    M   NMMMMMMMMMMMMM    `N           XX
 XX            +  .sMNNNNNMMMMMN+   `N    N`   +NMMMMMNNNNNMs.  +            XX
 XX              o+++     ++++Mo    M      M    oM++++     +++o              XX
-XX                                oo      oo                                XX
-XX           oM                 oo          oo                 Mo           XX
+XX                               oo      oo                                 XX
+XX           oM                oo          oo                Mo           XX
 XX         oMMo                M              M                oMMo         XX
-XX       +MMMM                 s              s                 MMMM+       XX
+XX       +MMMM                 s              s                  MMMM+      XX
 XX      +MMMMM+            +++NNNN+        +NNNN+++            +MMMMM+      XX
 XX     +MMMMMMM+       ++NNMMMMMMMMN+    +NMMMMMMMMNN++       +MMMMMMM+     XX
 XX     MMMMMMMMMNN+++NNMMMMMMMMMMMMMMNNNNMMMMMMMMMMMMMMNN+++NNMMMMMMMMM     XX
@@ -167,19 +194,19 @@ XX     yMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMy     XX
 XX   m  yMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMy  m   XX
 XX   MMm yMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMy mMM   XX
 XX   MMMm .yyMMMMMMMMMMMMMMMM     MMMMMMMMMM     MMMMMMMMMMMMMMMMyy. mMMM   XX
-XX   MMMMd   ''''hhhhh       odddo          obbbo        hhhh''''   dMMMM   XX
+XX   MMMMd   ''''hhhhh        odddo          obbbo        hhhh''''   dMMMM   XX
 XX   MMMMMd             'hMMMMMMMMMMddddddMMMMMMMMMMh'             dMMMMM   XX
 XX   MMMMMMd              'hMMMMMMMMMMMMMMMMMMMMMMh'              dMMMMMM   XX
 XX   MMMMMMM-               ''ddMMMMMMMMMMMMMMdd''               -MMMMMMM   XX
 XX   MMMMMMMM                   '::dddddddd::'                   MMMMMMMM   XX
-XX   MMMMMMMM-                                                  -MMMMMMMM   XX
-XX   MMMMMMMMM                                                  MMMMMMMMM   XX
-XX   MMMMMMMMMy                                                yMMMMMMMMM   XX
-XX   MMMMMMMMMMy.                                            .yMMMMMMMMMM   XX
-XX   MMMMMMMMMMMMy.                                        .yMMMMMMMMMMMM   XX
-XX   MMMMMMMMMMMMMMy.                                    .yMMMMMMMMMMMMMM   XX
+XX   MMMMMMMM-                                                 -MMMMMMMM   XX
+XX   MMMMMMMMM                                                 MMMMMMMMM   XX
+XX   MMMMMMMMMy                                               yMMMMMMMMM   XX
+XX   MMMMMMMMMMy.                                           .yMMMMMMMMMM   XX
+XX   MMMMMMMMMMMMy.                                       .yMMMMMMMMMMMM   XX
+XX   MMMMMMMMMMMMMMy.                                   .yMMMMMMMMMMMMMM   XX
 XX   MMMMMMMMMMMMMMMMs.                                .sMMMMMMMMMMMMMMMM   XX
-XX   MMMMMMMMMMMMMMMMMMss.           ....           .ssMMMMMMMMMMMMMMMMMM   XX
+XX   MMMMMMMMMMMMMMMMMMss.            ....            .ssMMMMMMMMMMMMMMMMMM   XX
 XX   MMMMMMMMMMMMMMMMMMMMNo         oNNNNo         oNMMMMMMMMMMMMMMMMMMMM   XX
 XX                                                                          XX
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -210,6 +237,7 @@ window.addEventListener("DOMContentLoaded", function () {
 // timer
 const deadline = new Date("2026-02-28T23:59:59").getTime();
 const timerElement = document.getElementById("timer");
+const overdueIcon = document.getElementById("overdueIcon"); // Получаем наш значок
 
 function updateTimer() {
     const now = new Date().getTime();
@@ -217,6 +245,7 @@ function updateTimer() {
 
     if (difference <= 0) {
         timerElement.innerHTML = ">>> PAYMENT OVERDUE <<<";
+        overdueIcon.style.display = "block"; // Показываем мерцающий значок
         return;
     }
 

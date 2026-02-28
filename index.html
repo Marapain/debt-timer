@@ -1,163 +1,131 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>debt_timer.sh</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>fsociety_radio_ultimate</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #000000;
+            --main-red: #ff2a2a;
+            --low-glow: 0 0 5px rgba(255, 42, 42, 0.2);
+            --glitch-shadow: 2px 0 #ff0000, -2px 0 #00ffff;
+        }
 
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+        * { box-sizing: border-box; scrollbar-width: none; }
+        ::-webkit-scrollbar { display: none; }
 
-<style>
-body {
-    margin: 0;
-    min-height: 100vh;
-    background: black;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: red;
-    font-family: 'Press Start 2P', monospace;
-    text-align: center;
-    overflow-x: hidden;
-    padding: 20px;
-    box-sizing: border-box;
-}
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-color);
+            color: var(--main-red);
+            font-family: 'Press Start 2P', cursive;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            text-shadow: var(--low-glow);
+        }
 
-.terminal {
-    font-size: clamp(12px, 3vw, 18px);
-    line-height: 1.8;
-    max-width: 100%;
-    z-index: 10;
-}
+        /* --- UI Elements --- */
+        .main-ui { text-align: center; z-index: 5; transition: 0.5s; }
+        #track-display { font-size: 12px; margin-bottom: 20px; min-height: 1.5em; color: #aa0000; }
+        #countdown { font-size: 18px; margin-bottom: 40px; }
+        
+        .ok-btn {
+            background: transparent; color: var(--main-red);
+            border: 2px solid var(--main-red); padding: 15px 40px;
+            font-family: 'Press Start 2P', cursive; cursor: pointer;
+            outline: none; transition: 0.3s;
+        }
+        .ok-btn:hover { background: var(--main-red); color: black; }
 
-#timer {
-    margin-top: 30px;
-    font-size: clamp(14px, 4vw, 22px);
-}
+        /* --- Side Panel (Terminal) --- */
+        .menu-trigger { position: fixed; top: 20px; left: 20px; cursor: pointer; z-index: 100; font-size: 14px; }
+        
+        .side-panel {
+            position: fixed; top: 0; left: -100%; width: 550px; height: 100%; max-width: 100vw;
+            background: #050000; border-right: 1px solid #200;
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 40px 20px 20px 20px; z-index: 90;
+            display: flex; flex-direction: column;
+        }
+        .side-panel.active { left: 0; }
 
-.blink {
-    animation: blink 1s infinite;
-}
+        .close-menu {
+            position: absolute; right: 20px; top: 20px; cursor: pointer; font-size: 16px;
+        }
 
-@keyframes blink {
-    50% { opacity: 0; }
-}
+        .terminal-output {
+            flex-grow: 1; overflow-y: auto; font-size: 10px;
+            line-height: 1.8; margin-bottom: 10px; color: #800;
+            transition: opacity 0.15s ease;
+        }
+        
+        .input-line { display: flex; align-items: center; gap: 10px; font-size: 10px; }
+        #term-input {
+            background: transparent; border: none; color: var(--main-red);
+            font-family: 'Press Start 2P', cursive; font-size: 10px;
+            width: 100%; outline: none;
+        }
 
-button {
-    margin-top: 40px;
-    background: black;
-    color: red;
-    border: 2px solid red;
-    padding: 12px 20px;
-    font-family: 'Press Start 2P', monospace;
-    font-size: clamp(10px, 3vw, 14px);
-    cursor: pointer;
-    position: relative;
-    z-index: 20;
-}
+        /* --- Animations & Easter Egg --- */
+        #ascii-layer {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            display: none; z-index: 1000; white-space: pre; font-size: 6px; pointer-events: none;
+        }
+        .glitch { animation: glitch-anim 0.2s infinite; }
+        @keyframes glitch-anim {
+            0% { transform: translate(-50%, -50%) skew(2deg); text-shadow: var(--glitch-shadow); }
+            50% { transform: translate(-49%, -51%) skew(-2deg); text-shadow: -2px 0 red, 2px 0 cyan; }
+            100% { transform: translate(-51%, -49%); }
+        }
 
-button:hover {
-    background: red;
-    color: black;
-}
+        @keyframes flicker-text {
+            0% { opacity: 0; } 20% { opacity: 1; } 40% { opacity: 0.3; } 100% { opacity: 1; }
+        }
 
-/* --- НОВЫЙ БЛОК ДЛЯ МЕРЦАЮЩЕГО ЗНАЧКА ПО ЦЕНТРУ --- */
-#overdueIcon {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: clamp(100px, 25vw, 300px);
-    color: red;
-    text-shadow: 0 0 30px red;
-    opacity: 0.3; /* Сделаем его слегка полупрозрачным, чтобы текст под ним читался */
-    display: none; /* Скрыт по умолчанию */
-    z-index: 5; /* Позади текста, но на виду */
-    pointer-events: none; /* Чтобы не мешал кликать на кнопку */
-    animation: slowBlink 2s infinite;
-}
-
-@keyframes slowBlink {
-    0%, 100% { opacity: 0.4; text-shadow: 0 0 40px red; transform: translate(-50%, -50%) scale(1); }
-    50% { opacity: 0; text-shadow: 0 0 0px red; transform: translate(-50%, -50%) scale(0.95); }
-}
-/* --------------------------------------------------- */
-
-#screamer {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: black;
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    color: red;
-    font-size: clamp(18px, 6vw, 32px);
-}
-
-#skullFlash {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: black;
-    color: hotpink;
-    display: none;
-    justify-content: center;
-    align-items: center;
-    font-size: clamp(3px, 1.5vw, 10px);
-    z-index: 5000;
-    text-shadow: 2px 0 red, -2px 0 cyan;
-    animation: glitch 0.2s infinite;
-}
-
-pre {
-    overflow-x: auto;
-    max-width: 100%;
-}
-
-@keyframes glitch {
-    0% { transform: translate(2px, 2px); }
-    20% { transform: translate(-2px, -2px); }
-    40% { transform: translate(2px, -2px); }
-    60% { transform: translate(-2px, 2px); }
-    80% { transform: translate(1px, -1px); }
-    100% { transform: translate(0); }
-}
-
-@media (max-width: 600px) {
-    body {
-        align-items: flex-start;
-        padding-top: 40px;
-    }
-}
-</style>
+        #elliot-mode {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); display: none; z-index: 2000;
+            justify-content: center; align-items: center; text-align: center; line-height: 2;
+        }
+    </style>
 </head>
 <body>
 
-<audio id="bgMusic" autoplay loop muted>
-    <source src="music.mp3" type="audio/mpeg">
-</audio>
+    <div class="menu-trigger" onclick="toggleMenu()">>_ TERMINAL</div>
 
-<div id="overdueIcon">☠</div>
+    <div id="elliot-mode">
+        <div>
+            <p id="elliot-text"></p>
+        </div>
+    </div>
 
-<div class="terminal">
-    <div>> DO VOZVRATA DENEG...</div>
-    <div id="timer"></div>
-    <div class="blink">█</div>
-    <button onclick="activateScreamer()">click <---</button>
-</div>
+    <div class="side-panel" id="side-panel">
+        <div class="close-menu" onclick="toggleMenu()">></div>
+        <div class="terminal-output" id="term-out">
+            <div>fsociety_radio_os [Version 1.7.0.3]</div>
+            <div>(c) IRA corp. All rights reserved.</div>
+            <br>
+        </div>
+        <div class="input-line">
+            <span>fsociety@radio:~$</span>
+            <input type="text" id="term-input" autocomplete="off" spellcheck="false">
+        </div>
+    </div>
 
-<div id="screamer">
-    48512166778
-</div>
+    <div class="main-ui" id="main-ui">
+        <div id="track-display">NOT_CONNECTED</div>
+        <div id="countdown">00D 00H 00M 00S</div>
+        <button class="ok-btn" onclick="triggerOk()">OK</button>
+    </div>
 
-<div id="skullFlash">
-<pre>
+    <audio id="audio-player"></audio>
+
+    <div id="ascii-layer">
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 XX                                                                          XX
@@ -211,86 +179,375 @@ XX   MMMMMMMMMMMMMMMMMMMMNo         oNNNNo         oNMMMMMMMMMMMMMMMMMMMM   XX
 XX                                                                          XX
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-</pre>
-</div>
+    </div>
 
 <script>
-// music
-window.addEventListener("DOMContentLoaded", function () {
-    const music = document.getElementById("bgMusic");
-    let playPromise = music.play();
+    // tracklist
+    const playlist = [
+        "1.0_1-hellofriend.wav.mp3", "1.0_2-oneincontrol.aiff.mp3", "1.0_3-fucksociety.mp3.mp3",
+        "1.0_4-m0rphine.aac.mp3", "1.0_5-pierreloti.au.mp3", "1.0_6-leavem3here.flac.mp3",
+        "1.0_7-waitfortheQ.ogg.mp3", "1.0_8-whatsyourask.m4p.mp3", "1.0_9-flipper.bwf.mp3",
+        "1.1_1-one6away.caf.mp3", "1.1_2-wearefsociety.sd2.mp3", "1.1_3-oneor0.wma.mp3",
+        "1.1_4-hateurself.ra.mp3", "1.1_5-illusionofchoice.mp3.mp3", "1.1_6-believe-in-erasing.au.mp3",
+        "1.2_1-IwillbeCTO.m4p.mp3", "1.2_2-humanpunchingbag.aiff.mp3", "1.2_3-therealshayla.wav.mp3",
+        "1.3_1-Ichosethis.ogg.mp3", "1.3_2-everyrev0lution.ra.mp3", "1.3_3-betterthanm0rphine.aac.mp3",
+        "1.3_4-allsafevirus.bwf.mp3", "1.3_5-da3m0nsneverstop.caf.mp3", "1.4_1-squ4rewiththeuniverse.wma.mp3",
+        "1.4_2-impenetrable.sd2.mp3", "1.4_3-billharper.mp3.mp3", "1.4_4-exploitingtyrell.wav.mp3",
+        "1.4_5-revenge1syourweakn3ss.ra.mp3", "1.4_6-n0execution.au.mp3", 
+        "MoiGuby.mp3" 
+    ];
 
-    if (playPromise !== undefined) {
-        playPromise.then(() => {
-            music.muted = false;
-            music.volume = 1.0;
-        }).catch(() => {
-            document.addEventListener("click", function () {
-                music.muted = false;
-                music.volume = 1.0;
-                music.play();
-            }, { once: true });
-        });
+    // state
+    let currentIndex = 0;
+    let history = [];
+    let historyIndex = -1;
+    let lastMatches = [];
+    let tabPressCount = 0;
+    let previousVolume = 1;
+    let isMuted = false;
+
+    const audio = document.getElementById('audio-player');
+    const termInput = document.getElementById('term-input');
+    const termOut = document.getElementById('term-out');
+    const trackDisplay = document.getElementById('track-display');
+
+    // play track
+    function playTrack(index) {
+        if (currentIndex === index && !audio.paused && audio.src.includes(playlist[index])) return; 
+        
+        currentIndex = index;
+        audio.src = playlist[currentIndex];
+        audio.play().catch(() => console.log("browser blocked autoplay"));
+        
+        trackDisplay.innerText = playlist[currentIndex];
+        trackDisplay.style.animation = "none";
+        void trackDisplay.offsetWidth; 
+        trackDisplay.style.animation = "flicker-text 0.4s";
     }
-});
 
-// timer
-const deadline = new Date("2026-02-28T22:39:00").getTime();
-const timerElement = document.getElementById("timer");
-const overdueIcon = document.getElementById("overdueIcon"); // Получаем наш значок
+    // play next
+    audio.onended = () => {
+        currentIndex = (currentIndex + 1) % playlist.length;
+        playTrack(currentIndex);
+    };
 
-function updateTimer() {
-    const now = new Date().getTime();
-    const difference = deadline - now;
-
-    if (difference <= 0) {
-        timerElement.innerHTML = ">>> PAYMENT OVERDUE <<<";
-        overdueIcon.style.display = "block"; // Показываем мерцающий значок
-        return;
+    // smooth vol
+    function smoothVolume(target) {
+        let step = (target - audio.volume) / 20;
+        let i = 0;
+        clearInterval(window.volInterval);
+        window.volInterval = setInterval(() => {
+            audio.volume += step;
+            i++;
+            if (i >= 20 || audio.volume <= 0 || audio.volume >= 1) {
+                audio.volume = Math.max(0, Math.min(1, target)); 
+                clearInterval(window.volInterval);
+            }
+        }, 20);
     }
 
-    const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
-    const minutes = Math.floor((difference / (1000 * 60)) % 60);
-    const seconds = Math.floor((difference / 1000) % 60);
-
-    timerElement.innerHTML =
-        days + "D " +
-        hours + "H " +
-        minutes + "M " +
-        seconds + "S";
-}
-
-setInterval(updateTimer, 1000);
-updateTimer();
-
-// knopka
-function activateScreamer() {
-    const screamer = document.getElementById("screamer");
-    screamer.style.display = "flex";
-}
-
-// glitch
-function glitchKitty() {
-    const skull = document.getElementById("skullFlash");
-
-    if (skull.style.display === "flex") return;
-
-    skull.style.display = "flex";
-
-    setTimeout(() => {
-        skull.style.display = "none";
-    }, 2000);
-}
-
-setInterval(() => {
-    if (Math.random() < 0.4) {
-        glitchKitty();
+    // fuzzy search math
+    function getLevenshtein(a, b) {
+        const matrix = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+        for (let j = 1; j <= b.length; j++) matrix[0][j] = j;
+        for (let i = 1; i <= a.length; i++) {
+            for (let j = 1; j <= b.length; j++) {
+                const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                matrix[i][j] = Math.min(matrix[i - 1][j] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j - 1] + cost);
+            }
+        }
+        return matrix[a.length][b.length];
     }
-}, 6000);
+
+    // main term logic
+    function handleCommand(cmd) {
+        const inputValue = cmd.trim().toLowerCase();
+        if (!inputValue) return;
+
+        // basic history
+        history.push(cmd);
+        historyIndex = history.length;
+        
+        // hide secret triggers from log
+        if (inputValue !== 'clear' && inputValue !== 'doof' && inputValue !== 'itrololo1703') {
+            printToTerm(`fsociety@radio:~$ ${cmd}`, "var(--main-red)");
+        }
+        
+        tabPressCount = 0;
+
+        // clear log
+        if (inputValue === "clear") {
+            termOut.style.opacity = "0";
+            setTimeout(() => {
+                termOut.innerHTML = "";
+                termOut.style.opacity = "1";
+            }, 150);
+            return;
+        }
+
+        // media controls
+        if (inputValue === "pause") {
+            audio.pause();
+            printToTerm("Playback paused.");
+            trackDisplay.style.animation = "none";
+            return;
+        }
+
+        if (inputValue === "stop") {
+            audio.pause();
+            audio.currentTime = 0;
+            printToTerm("Playback stopped.");
+            trackDisplay.innerText = "NOT_CONNECTED";
+            trackDisplay.style.animation = "none";
+            return;
+        }
+
+        if (inputValue === "play") {
+            if (audio.src && audio.paused) {
+                audio.play();
+                printToTerm("Playback resumed.");
+                trackDisplay.style.animation = "flicker-text 0.4s";
+            } else if (!audio.src) {
+                playTrack(0);
+                printToTerm(`PLAYING: ${playlist[0]}`);
+            } else {
+                printToTerm("Already playing.");
+            }
+            return;
+        }
+
+        // elliot
+        if (inputValue === 'elliot') {
+            triggerElliot();
+            return;
+        }
+
+        // secret trigger
+        if (inputValue === "doof" || inputValue === "itrololo1703") {
+            const iraTrack = playlist.find(track => track.toLowerCase().includes("moi"));
+            if (iraTrack) {
+                const idx = playlist.indexOf(iraTrack);
+                if (idx !== -1) {
+                    playTrack(idx);
+                }
+            }
+            return; 
+        }
+
+        // volume
+        if (inputValue.startsWith("volume")) {
+            const parts = inputValue.split(" ");
+            if (parts.length === 1) {
+                printToTerm("Current volume: " + Math.round(audio.volume * 100) + "%");
+                return;
+            }
+            let value = parseFloat(parts[1]);
+            if (isNaN(value)) {
+                printToTerm("ERROR: INVALID_VOLUME_VALUE");
+                return;
+            }
+            if (value > 1) value = value / 100;
+            if (value < 0) value = 0;
+            if (value > 1) value = 1;
+            
+            smoothVolume(value);
+            isMuted = false;
+            printToTerm("Volume set to " + Math.round(value * 100) + "%");
+            return;
+        }
+
+        // mute toggle
+        if (inputValue === "mute") {
+            if (!isMuted) {
+                previousVolume = audio.volume;
+                smoothVolume(0);
+                isMuted = true;
+                printToTerm("System muted.");
+            }
+            return;
+        }
+        if (inputValue === "unmute") {
+            if (isMuted) {
+                smoothVolume(previousVolume);
+                isMuted = false;
+                printToTerm("System unmuted. Volume restored to " + Math.round(previousVolume * 100) + "%");
+            }
+            return;
+        }
+
+        // multi match
+        if (lastMatches.length > 0 && !isNaN(inputValue)) {
+            const num = parseInt(inputValue);
+            if (num > 0 && num <= lastMatches.length) {
+                const foundTrack = lastMatches[num - 1];
+                const idx = playlist.indexOf(foundTrack);
+                playTrack(idx);
+                printToTerm(`PLAYING: ${foundTrack}`);
+                lastMatches = [];
+                return;
+            }
+        }
+
+        // simple search
+        let matches = playlist.filter(t => t.toLowerCase().includes(inputValue));
+
+        // fuzzy fallback
+        if (matches.length === 0) {
+            matches = playlist
+                .map(t => ({ name: t, dist: getLevenshtein(inputValue, t.toLowerCase()) }))
+                .filter(res => res.dist <= 3) 
+                .sort((a, b) => a.dist - b.dist)
+                .slice(0, 5) 
+                .map(res => res.name);
+        }
+
+        // play or list matches
+        if (matches.length === 1) {
+            const foundTrack = matches[0];
+            playTrack(playlist.indexOf(foundTrack));
+            printToTerm(`PLAYING: ${foundTrack}`);
+            lastMatches = [];
+        } else if (matches.length > 1) {
+            lastMatches = matches;
+            printToTerm(`MATCHES FOUND:`);
+            matches.forEach((m, i) => printToTerm(` [${i + 1}] ${m}`));
+            printToTerm(`Type number to select.`);
+        } else {
+            printToTerm(`ERROR: FILE_NOT_FOUND`, "#f00");
+            lastMatches = [];
+        }
+    }
+
+    // tab autocomplete
+    function handleAutocomplete() {
+        const val = termInput.value.toLowerCase();
+        if (!val) return;
+
+        const matches = playlist.filter(t => t.toLowerCase().includes(val));
+        
+        if (matches.length === 1) {
+            termInput.value = matches[0];
+        } else if (matches.length > 1) {
+            if (tabPressCount === 0) {
+                printToTerm(`fsociety@radio:~$ ${val}`, "var(--main-red)");
+                printToTerm("AUTOCOMPLETE SUGGESTIONS:");
+                matches.forEach(m => printToTerm(`  ${m}`));
+                tabPressCount++;
+            } else {
+                let prefix = matches[0].toLowerCase();
+                for(let i = 1; i < matches.length; i++) {
+                    while(!matches[i].toLowerCase().startsWith(prefix)) {
+                        prefix = prefix.slice(0, -1);
+                    }
+                }
+                if(prefix.length > val.length) {
+                    termInput.value = prefix;
+                }
+                tabPressCount = 0;
+            }
+        }
+    }
+
+    // keyboard events
+    termInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            handleCommand(termInput.value);
+            termInput.value = '';
+        }
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            handleAutocomplete();
+        }
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (historyIndex > 0) {
+                historyIndex--;
+                termInput.value = history[historyIndex];
+            }
+        }
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                termInput.value = history[historyIndex];
+            } else {
+                historyIndex = history.length;
+                termInput.value = '';
+            }
+        }
+        if (e.key !== 'Tab' && e.key !== 'Shift') {
+            tabPressCount = 0; 
+        }
+    });
+
+    // elliot stuff
+    function triggerElliot() {
+        const overlay = document.getElementById('elliot-mode');
+        const text = document.getElementById('elliot-text');
+        overlay.style.display = 'flex';
+        
+        const lines = ["Hello, friend.", "We are fsociety.", "Are you a 1 or a 0?"];
+        let i = 0;
+        text.innerText = "";
+        
+        const interval = setInterval(() => {
+            text.innerText += (i > 0 ? "\n" : "") + lines[i];
+            i++;
+            if(i >= lines.length) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    playTrack(0); 
+                }, 3000);
+            }
+        }, 1500);
+    }
+
+    // utils
+    function printToTerm(txt, color = "#800") {
+        const div = document.createElement('div');
+        div.style.color = color;
+        div.innerText = txt;
+        termOut.appendChild(div);
+        termOut.scrollTop = termOut.scrollHeight;
+    }
+
+    // side panel
+    function toggleMenu() {
+        const panel = document.getElementById('side-panel');
+        panel.classList.toggle('active');
+        if(panel.classList.contains('active')) {
+            setTimeout(() => termInput.focus(), 100);
+        }
+    }
+
+    function triggerOk() {
+        const ascii = document.getElementById('ascii-layer');
+        ascii.style.display = 'block';
+        ascii.classList.add('glitch');
+        setTimeout(() => {
+            ascii.style.display = 'none';
+            ascii.classList.remove('glitch');
+        }, 3000);
+    }
+
+    // timer
+    const target = new Date("January 1, 2027 00:00:00").getTime();
+    setInterval(() => {
+        const now = new Date().getTime();
+        const diff = target - now;
+        if(diff < 0) {
+            document.getElementById('countdown').innerText = "HAPPY NEW YEAR";
+            return;
+        }
+        const d = Math.floor(diff / (86400000));
+        const h = Math.floor((diff % 86400000) / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        document.getElementById('countdown').innerText = 
+            `${String(d).padStart(2,'0')}D ${String(h).padStart(2,'0')}H ${String(m).padStart(2,'0')}M ${String(s).padStart(2,'0')}S`;
+    }, 1000);
 
 </script>
-
 </body>
 </html>
-

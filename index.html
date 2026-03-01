@@ -285,6 +285,31 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
             return;
         }
 
+        // show commands
+        if (inputValue === "help") {
+            printToTerm("Available commands:");
+            printToTerm(" play");
+            printToTerm(" pause");
+            printToTerm(" stop");
+            printToTerm(" next");
+            printToTerm(" volume");
+            printToTerm(" mute");
+            printToTerm(" unmute");
+            printToTerm(" listinfo");
+            printToTerm(" clear");
+            printToTerm(" help");
+            return;
+        }
+
+        // print playlist
+        if (inputValue === "listinfo") {
+            printToTerm("Tracks available:");
+            playlist.forEach((track, idx) => {
+                printToTerm(` ${idx + 1}. ${track}`);
+            });
+            return;
+        }
+
         // media controls
         if (inputValue === "pause") {
             audio.pause();
@@ -312,6 +337,19 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
                 printToTerm(`PLAYING: ${playlist[0]}`);
             } else {
                 printToTerm("Already playing.");
+            }
+            return;
+        }
+
+        // skip track
+        if (inputValue === "next") {
+            if (!audio.paused || !audio.src) {
+                let nextIndex = currentIndex + 1;
+                if (nextIndex >= playlist.length) nextIndex = 0;
+                playTrack(nextIndex);
+                printToTerm(`PLAYING: ${playlist[nextIndex]}`);
+            } else {
+                printToTerm("Cannot skip while stopped/paused.");
             }
             return;
         }
